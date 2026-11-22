@@ -10,6 +10,8 @@ export interface AnalysisSettingValues {
   readonly "ghidra.decompile_timeout_seconds": number | null;
   readonly "ghidra.decompile_max_payload_mib": number | null;
   readonly "jadx.operation_timeout_ms": number;
+  readonly "hbc2js.decompile_timeout_ms": number;
+  readonly "hbc2js.max_heap_mb": number | null;
   readonly "regex.matching_deadline_ms": number;
   readonly "regex.worker_heap_request_mib": number;
   readonly "capture.decoder_old_generation_mib": number;

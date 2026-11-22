@@ -44,4 +44,25 @@ export const HBC2JS_TOOL_CONTRACTS = [
       },
     ],
   },
+  {
+    name: "decompile_hermes_function",
+    cli: true,
+    ...toolContractMetadata(
+      "decompile_hermes_function",
+      toolEffects({ launchesProcess: true }),
+    ),
+    description:
+      "Decompile one function (function_index) or one Metro module factory (module_id) of a Hermes bytecode (.hbc) file to JavaScript through the caller-selected hbc2js launcher. The result is a derivation: names are synthesized, identifiers captured from enclosing functions appear free, and semantic equivalence to the bytecode is not claimed. verification.syntax:false returns the source with a limitation. Source is capped by max_source_bytes with truncated and a recovery; decompile_timeout_ms and max_heap_mb (settings hbc2js.decompile_timeout_ms, hbc2js.max_heap_mb) bound the hbc2js process. Static: the bytecode is never executed.",
+    kind: "hbc2js-provider",
+    inputSchema: hbc2jsInputSchemas.decompile_hermes_function,
+    outputSchema: evidenceResultOf(
+      hbc2jsResultSchemas.decompile_hermes_function,
+    ),
+    examples: [
+      {
+        title: "Decompile a Metro module factory",
+        input: { path: "/targets/index.android.hbc", module_id: 0 },
+      },
+    ],
+  },
 ] as const satisfies readonly ToolContract[];

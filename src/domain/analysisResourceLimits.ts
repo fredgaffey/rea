@@ -164,6 +164,11 @@ export const CAPTURE_DECODER_SEMI_SPACE_MIB = 8;
  */
 export const MAXIMUM_CAPTURE_DECODER_OLD_GENERATION_MIB = 16_384;
 export const DEFAULT_JADX_OPERATION_TIMEOUT_MS = 120_000;
+/** hbc2js decompile wall clock; large bundles take minutes. */
+export const DEFAULT_HBC2JS_DECOMPILE_TIMEOUT_MS = 300_000;
+/** Bounds for the hbc2js child's V8 old-space, passed as --max-old-space-size. */
+export const MINIMUM_HBC2JS_MAX_HEAP_MB = 64;
+export const MAXIMUM_HBC2JS_MAX_HEAP_MB = 65_536;
 
 /**
  * Shared GDB and Rizin command deadline used when the setting is unset.

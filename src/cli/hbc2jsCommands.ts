@@ -63,4 +63,25 @@ export const registerHbc2jsCommands = (
       ).then(projectCliAnalysisResult);
     },
   );
+  registerContractCommand(
+    cli,
+    logger,
+    contractNamed(HBC2JS_TOOL_CONTRACTS, "decompile_hermes_function"),
+    {
+      description:
+        "Decompile one function or Metro module factory of a Hermes bytecode file through hbc2js",
+      positionals: ["path"],
+    },
+    (input, { operation, signal }) => {
+      const owned = run("decompile_hermes_function")();
+      return finishCliEvidenceCommand(
+        input.path,
+        () => owned.inspect(input, { signal }),
+        owned,
+        "hbc2js",
+        operation,
+        signal,
+      ).then(projectCliAnalysisResult);
+    },
+  );
 };

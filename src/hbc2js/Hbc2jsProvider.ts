@@ -17,7 +17,11 @@ import {
 import { providerConfigurationRefusal } from "../domain/providerConfigurationRefusal.js";
 import { err, ok, type Result } from "../domain/result.js";
 import type { Hbc2jsRequest } from "../domain/hbc2js/hermesBytecode.js";
+import type { AnalysisSettingsReader } from "../domain/analysisSettings.js";
+import { selectedAnalysisSetting } from "../domain/analysisSettingDefinitions.js";
+import { DEFAULT_HBC2JS_DECOMPILE_TIMEOUT_MS } from "../domain/analysisResourceLimits.js";
 import { ArtifactResourceScope } from "../resources/index.js";
+import type { Hbc2jsCommandSelection } from "./Hbc2jsConfiguration.js";
 import {
   Hbc2jsConfigurationFailure,
   hbc2jsConfigurationAvailability,
@@ -25,6 +29,7 @@ import {
 } from "./Hbc2jsConfiguration.js";
 import { HBC2JS_PROVIDER_IDENTITY } from "./Hbc2jsProviderIdentity.js";
 import { inspectHermesBytecode } from "./Hbc2jsBytecodeInspection.js";
+import { decompileHermesFunction } from "./Hbc2jsFunctionDecompilation.js";
 import { inspectHbc2jsClient } from "./Hbc2jsVersionProbe.js";
 
 const INSPECT_CLIENT = "inspect_hbc2js_client";
@@ -41,6 +46,8 @@ export interface Hbc2jsProviderOptions {
   readonly environment?: Readonly<Record<string, string | undefined>>;
   /** The host hbc2js runs on; defaults to the running host. */
   readonly platform?: NodeJS.Platform;
+  /** Runtime analysis settings (hbc2js.decompile_timeout_ms, hbc2js.max_heap_mb). */
+  readonly settings?: AnalysisSettingsReader;
 }
 
 /**
@@ -59,7 +66,10 @@ export class Hbc2jsProvider {
   #closing = false;
   #closePromise: Promise<void> | undefined;
 
+  readonly #settings: AnalysisSettingsReader | undefined;
+
   constructor(options: Hbc2jsProviderOptions = {}) {
+    this.#settings = options.settings;
     this.platform = options.platform ?? HOST_PLATFORM.platform;
     this.selectedEnvironment =
       options.environment === undefined
@@ -201,6 +211,12 @@ export class Hbc2jsProvider {
           ),
         );
       }
+      if (request.operation === "decompile_hermes_function")
+        return this.#decompile(request, selection, identity.version, {
+          signal,
+          environment,
+          identityLimitations: identity.limitations,
+        });
       return ok(
         createAnalysisExecution(
           {
@@ -245,6 +261,50 @@ export class Hbc2jsProvider {
         ),
       );
     }
+  }
+
+  async #decompile(
+    request: Extract<Hbc2jsRequest, { operation: "decompile_hermes_function" }>,
+    selection: Hbc2jsCommandSelection,
+    version: string,
+    run: {
+      readonly signal: AbortSignal;
+      readonly environment: Readonly<NodeJS.ProcessEnv>;
+      readonly identityLimitations: readonly string[];
+    },
+  ): Promise<Result<AnalysisExecution, AnalysisError>> {
+    const { signal, environment } = run;
+    const overrides = this.#settings?.().overrides;
+    const timeout = selectedAnalysisSetting(
+      request.input.decompile_timeout_ms,
+      overrides?.["hbc2js.decompile_timeout_ms"],
+      DEFAULT_HBC2JS_DECOMPILE_TIMEOUT_MS,
+    );
+    const decompiled = await decompileHermesFunction(request, {
+      selection,
+      scope: this.#artifacts,
+      limits: {
+        timeoutMs: timeout.value,
+        heapMb:
+          request.input.max_heap_mb ??
+          overrides?.["hbc2js.max_heap_mb"] ??
+          null,
+        timeoutSource: timeout.source,
+      },
+      signal,
+      environment,
+      platform: this.platform,
+    });
+    if (signal.aborted) return err(cancelledBy(request.operation, signal));
+    return ok(
+      createAnalysisExecution(
+        decompiled.result,
+        { ...HBC2JS_PROVIDER_IDENTITY, version: `hbc2js@${version}` },
+        {
+          limitations: [...run.identityLimitations, ...decompiled.limitations],
+        },
+      ),
+    );
   }
 
   #track<T>(operation: Promise<T>): Promise<T> {

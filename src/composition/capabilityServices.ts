@@ -643,9 +643,9 @@ const modules = {
     }),
   ),
   hbc2js: service(
-    ({ environment, options, platform }) =>
+    ({ environment, options, platform, settings }) =>
       options.hbc2jsAnalysis ??
-      createHermesBytecodeAnalysisProvider(environment, platform),
+      createHermesBytecodeAnalysisProvider(environment, platform, settings),
     (_context, value) => ({
       probes: {
         hbc2jsAnalysisAvailability: (signal: AbortSignal) =>

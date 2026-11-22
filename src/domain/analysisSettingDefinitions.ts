@@ -32,6 +32,9 @@ import {
   MINIMUM_CAPTURE_PACKET_JSON_EXPANSION_BYTES,
   MAXIMUM_CAPTURE_PACKET_JSON_EXPANSION_BYTES,
   DEFAULT_JADX_OPERATION_TIMEOUT_MS,
+  DEFAULT_HBC2JS_DECOMPILE_TIMEOUT_MS,
+  MINIMUM_HBC2JS_MAX_HEAP_MB,
+  MAXIMUM_HBC2JS_MAX_HEAP_MB,
   DEFAULT_NATIVE_MATCHING_REPRESENTATION_BYTES,
   MAXIMUM_NATIVE_MATCHING_REPRESENTATION_BYTES,
   DEFAULT_JAVASCRIPT_MEMBER_MUTATION_ALIAS_STATES,
@@ -344,6 +347,25 @@ export const ANALYSIS_SETTINGS = {
       "inspect_android_method",
       "trace_android_references",
     ],
+  },
+  "hbc2js.decompile_timeout_ms": {
+    updateMode: "runtime",
+    ...timer,
+    defaultValue: DEFAULT_HBC2JS_DECOMPILE_TIMEOUT_MS,
+    provider: "hbc2js",
+    operations: ["decompile_hermes_function"],
+    parameter: "decompile_timeout_ms",
+  },
+  "hbc2js.max_heap_mb": {
+    updateMode: "runtime",
+    defaultValue: null,
+    minimum: MINIMUM_HBC2JS_MAX_HEAP_MB,
+    maximum: MAXIMUM_HBC2JS_MAX_HEAP_MB,
+    unit: "MiB",
+    appliesAt: "next_operation",
+    provider: "hbc2js",
+    operations: ["decompile_hermes_function"],
+    parameter: "max_heap_mb",
   },
   "regex.matching_deadline_ms": {
     updateMode: "runtime",
@@ -721,7 +743,8 @@ export const analysisSettingValueSchema = (id: AnalysisSettingId) => {
     .min(definition.minimum)
     .max(definition.maximum);
   return id === "ghidra.decompile_timeout_seconds" ||
-    id === "ghidra.decompile_max_payload_mib"
+    id === "ghidra.decompile_max_payload_mib" ||
+    id === "hbc2js.max_heap_mb"
     ? number.nullable()
     : number;
 };

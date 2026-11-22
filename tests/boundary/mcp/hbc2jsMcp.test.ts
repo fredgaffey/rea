@@ -119,3 +119,91 @@ it("advertises exact valid inspect_hermes_bytecode schema and records evidence t
   expect(invalid.isError).toBe(true);
   expect(seen).toHaveLength(1);
 });
+
+it("advertises decompile_hermes_function and admits exactly one of function_index and module_id", async () => {
+  const seen: unknown[] = [];
+  const provider: RequestAnalysisPort<Hbc2jsRequest> = {
+    inspectAvailability: () =>
+      Promise.resolve({
+        status: "available",
+        code: null,
+        reason: null,
+        diagnostics: {},
+      }),
+    close: () => Promise.resolve(),
+    execute: (request) => {
+      seen.push(request.input);
+      return Promise.resolve(
+        ok(
+          createAnalysisExecution(
+            {
+              target: bytecode.target,
+              function: {
+                index: 3,
+                name: "i",
+                module_id: null,
+                factory_of: null,
+              },
+              source: "function _fn3(a1) {\n  return a1;\n}\n",
+              source_bytes: 36,
+              truncated: false,
+              max_source_bytes: 262144,
+              recovery: null,
+              passes: "default",
+              verification: { structurer: true, syntax: true },
+              invocation: {
+                contract: 1,
+                caller_input_path: bytecode.target.path,
+                argv: ["decompile"],
+                max_heap_mb: null,
+                decompile_timeout_ms: 300000,
+              },
+            },
+            identity,
+          ),
+        ),
+      );
+    },
+  };
+  const session = createTestBinarySession(() => {
+    throw new Error("deep provider must not start");
+  });
+  const server = createServer(
+    { kind: "session", session },
+    { hbc2jsAnalysis: provider, environment: { ...process.env } },
+  );
+  onTestFinished(() => server.close());
+  const [clientTransport, serverTransport] =
+    InMemoryTransport.createLinkedPair();
+  await server.connect(serverTransport);
+  const client = new Client(
+    { name: "hbc2js-boundary", version: "0.0.0" },
+    { jsonSchemaValidator: createMcpSchemaValidation() },
+  );
+  onTestFinished(() => client.close());
+  await client.connect(clientTransport);
+
+  const { tools } = await client.listTools();
+  assertAdvertisedMcpContracts(["decompile_hermes_function"], tools);
+  const reply = await client.callTool({
+    name: "decompile_hermes_function",
+    arguments: { path: "/targets/a.hbc", function_index: 3 },
+  });
+  expect(reply.isError).not.toBe(true);
+  expect(
+    parseEvidence(reply.structuredContent).normalized_result,
+  ).toMatchObject({ function: { index: 3 }, truncated: false });
+  for (const args of [
+    { path: "/targets/a.hbc" },
+    { path: "/targets/a.hbc", function_index: 1, module_id: 1 },
+  ])
+    expect(
+      (
+        await client.callTool({
+          name: "decompile_hermes_function",
+          arguments: args,
+        })
+      ).isError,
+    ).toBe(true);
+  expect(seen).toHaveLength(1);
+});

@@ -81,7 +81,8 @@ export const createHermesBytecodeAnalysisService = (
   new ProviderOperationService(provider, hbc2jsRequestSchema, (operation) =>
     // inspect_hermes_bytecode mixes observations and derivations; its result
     // keeps them apart, and the record as a whole is derived.
-    operation === "inspect_hermes_bytecode" ? "derived" : "observed",
+    // decompile_hermes_function is a derivation throughout.
+    operation === "inspect_hbc2js_client" ? "observed" : "derived",
   );
 
 export const createFlutterBuildAnalysisService = (

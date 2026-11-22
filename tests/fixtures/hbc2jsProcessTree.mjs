@@ -107,7 +107,43 @@ const modulesReply = () => {
   };
 };
 
-if (mode === "hang") {
+// `decompile --fn N|--module M --json [--passes=none]` as a function reply.
+const decompileReply = () => {
+  const flag = (name) => {
+    const at = args.indexOf(name);
+    return at === -1 ? null : Number(args[at + 1]);
+  };
+  const module = flag("--module");
+  const fn = module === null ? flag("--fn") : module + 74;
+  const passes = args.includes("--passes=none") ? "none" : "default";
+  const body =
+    mode === "big-source"
+      ? "  // padding\n".repeat(2_000)
+      : `  // NODE_OPTIONS=${process.env.NODE_OPTIONS ?? ""}\n`;
+  return {
+    schema: "hbc2js-machine/1",
+    kind: "function",
+    ok: true,
+    hbc2js: "0.1.0",
+    input: inputOf(),
+    warnings: [],
+    fn,
+    name: module === null ? "i" : "",
+    moduleId: module,
+    factoryOf: module,
+    source: `function _fn${fn}(a1) {\n${body}  return a1;\n}\n`,
+    verified: { structurer: true, syntax: mode !== "verify-fail" },
+    passes,
+  };
+};
+const hangsOnDecompile =
+  args[0] === "decompile" &&
+  (mode === "hang-decompile" || mode === "ignore-sigterm-decompile");
+
+if (hangsOnDecompile) {
+  if (mode === "ignore-sigterm-decompile") process.on("SIGTERM", () => {});
+  setInterval(() => {}, 1_000);
+} else if (mode === "hang") {
   setInterval(() => {}, 1_000);
 } else if (mode === "ignore-sigterm") {
   process.on("SIGTERM", () => {});
@@ -139,6 +175,20 @@ if (mode === "hang") {
       mode === "digest-mismatch" ? { ...input, sha256: "0".repeat(64) } : input,
     warnings: mode === "warn" ? [WARNING] : [],
   });
+} else if (args[0] === "decompile" && mode === "resource") {
+  const message = "E_RESOURCE: estimated heap 4096 MB exceeds the 512 MB limit";
+  emit({
+    schema: "hbc2js-machine/1",
+    kind: "error",
+    ok: false,
+    code: "E_RESOURCE",
+    message,
+    error: { code: "E_RESOURCE", message, context: { requiredMb: 4096 } },
+  });
+  process.exitCode = 3;
+} else if (args[0] === "decompile") {
+  emit(decompileReply());
+  if (mode === "verify-fail") process.exitCode = 5;
 } else if (args[0] === "modules") {
   emit(modulesReply());
 } else {

@@ -95,7 +95,8 @@ const parseReply = <T>(
 };
 
 /** REA's own size and digest of the target, read through a retained descriptor. */
-const measureTarget = async (
+export const measureTarget = async (
+  operation: string,
   path: string,
   scope: ArtifactResourceScope,
   signal: AbortSignal | undefined,
@@ -120,10 +121,10 @@ const measureTarget = async (
       ? physical
       : classifyProviderFailure(physical, {
           providerId: HBC2JS_PROVIDER_IDENTITY.id,
-          operation: OPERATION,
+          operation,
           file: { path, description: "Hermes bytecode file" },
           unclassified: (unclassified, details) =>
-            new ProviderAdapterError(HBC2JS_PROVIDER_IDENTITY.id, OPERATION, {
+            new ProviderAdapterError(HBC2JS_PROVIDER_IDENTITY.id, operation, {
               ...details,
               cause: unclassified,
               userMessage: `Cannot read the Hermes bytecode file ${path}: ${errorMessage(unclassified)}`,
@@ -160,7 +161,7 @@ export const inspectHermesBytecode = async (
       ? options
       : { ...options, outputLimitBytes: output_limit_bytes };
   const path = resolve(callerPath);
-  const measured = await measureTarget(path, scope, options.signal);
+  const measured = await measureTarget(OPERATION, path, scope, options.signal);
 
   const infoArgv = ["--info", path, "--json"];
   const modulesArgv = [
