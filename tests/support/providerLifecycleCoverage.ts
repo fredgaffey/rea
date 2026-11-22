@@ -254,6 +254,42 @@ export const PROVIDER_LIFECYCLE_COVERAGE: Readonly<
       ),
     },
   },
+  hbc2js: {
+    ownership: "process",
+    stages: {
+      launch: covered(
+        test(
+          "src/hbc2js/Hbc2jsVersionProbe.test.ts",
+          "reports a missing launcher with the environment repair",
+        ),
+      ),
+      handshake: ONE_SHOT,
+      operation: covered(
+        test(
+          "src/hbc2js/Hbc2jsProvider.test.ts",
+          "returns the resolved client for inspect_hbc2js_client",
+        ),
+      ),
+      cancel: covered(
+        test(
+          "src/hbc2js/Hbc2jsVersionProbe.lifecycle.test.ts",
+          "settles a cancelled probe of a hung launcher that ignores SIGTERM",
+        ),
+      ),
+      cleanup: covered(
+        test(
+          "src/hbc2js/Hbc2jsProvider.test.ts",
+          "refuses new work after close",
+        ),
+      ),
+      retry: covered(
+        test(
+          "src/hbc2js/Hbc2jsProvider.test.ts",
+          "refuses new work after close",
+        ),
+      ),
+    },
+  },
   binwalk: {
     ownership: "process",
     stages: {

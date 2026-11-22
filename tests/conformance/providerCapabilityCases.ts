@@ -26,6 +26,7 @@ export const PROVIDER_CAPABILITY_CONFORMANCE: Readonly<
     cases: ["tests/acceptance/apkSignatureLimitsCliMcp.test.ts"],
   },
   apktool: { cases: ["tests/boundary/cli/apktoolCli.test.ts"] },
+  hbc2js: { cases: ["tests/boundary/cli/hbc2jsCli.test.ts"] },
   appleApplicationGraph: {
     cases: ["tests/boundary/mcp/mobileApplicationGraphMcp.test.ts"],
   },
