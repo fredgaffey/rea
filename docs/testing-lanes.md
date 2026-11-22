@@ -279,6 +279,20 @@ with the reported target identity, apktool.yml metadata projection
 [Apktool resource analysis](guides/android/apktool-resource-analysis.md) for boundaries and
 budgets.
 
+## hbc2js Hermes bytecode
+
+`npm run verify:hbc2js [-- --hbc PATH] [--hermesc PATH]` drives
+`inspect_hbc2js_client`, `inspect_hermes_bytecode` and `decompile_hermes_function`
+through the compiled CLI and a stdio MCP server against a real launcher
+(`REA_HBC2JS_COMMAND`, absolute, or `hbc2js` on PATH). The sample is `--hbc PATH`,
+or `tests/fixtures/hbc2js/verify-sample.js` compiled at verify time with
+`hermesc` (`--hermesc`, `REA_HERMESC` or PATH); no compiled bytecode is checked
+in. It skips with a message and claims no coverage when hbc2js is missing, lacks
+machine contract 1, or no sample is available. hbc2js is private and unreleased,
+so CI does not run this lane; the fake-launcher boundary tests in
+`src/hbc2js/` and `tests/boundary/mcp/hbc2jsMcp.test.ts` run everywhere. See
+[Hermes bytecode analysis](guides/android/hermes-bytecode-analysis.md).
+
 ## Flutter build identification
 
 `npm run verify:flutter -- --apk PATH [--plain-apk PATH]` runs both pure

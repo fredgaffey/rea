@@ -335,6 +335,10 @@ instructions into field declarations, leaving an empty or incomplete method
 body. The selected method's disassembly preserves those instructions and retains
 the same source byte limit and explicit truncation reporting.
 
+React Native apps that ship Hermes bytecode (`index.android.bundle` as `.hbc`)
+have their JavaScript layer analyzed by a separate family; see
+[Hermes bytecode analysis](hermes-bytecode-analysis.md).
+
 ## Apply an R8/ProGuard mapping
 
 Release builds shrunk by R8 or ProGuard rename classes and members. Select the
