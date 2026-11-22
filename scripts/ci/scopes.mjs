@@ -4,6 +4,7 @@ export const WINDOWS_EXECUTABLE_SELECTION_INPUTS = [
   "src/process/WindowsExecutable*.ts",
   "src/adb/AdbConfiguration.ts",
   "src/apktool/ApktoolConfiguration.ts",
+  "src/hbc2js/Hbc2jsConfiguration.ts",
   "src/application/UpdateCommandRunner.ts",
   "tests/boundary/process/windowsExecutableSelection.test.ts",
 ];

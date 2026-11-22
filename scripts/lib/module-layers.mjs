@@ -68,6 +68,7 @@ export const UNIT_LAYERS = Object.freeze(
       "ghidra",
       "go",
       "gpu",
+      "hbc2js",
       "hopper",
       "ida",
       "il2cpp",
@@ -313,6 +314,7 @@ export const ENTRY_FILES = Object.freeze(
       ],
       go: ["GoBinaryProvider.ts", "GoBinaryProviderIdentity.ts"],
       gpu: ["GpuCodeObjectsProvider.ts", "GpuCodeObjectsProviderIdentity.ts"],
+      hbc2js: ["Hbc2jsProvider.ts", "Hbc2jsProviderIdentity.ts"],
       hopper: [
         "HopperProvider.ts",
         "HopperProviderMetadata.ts",

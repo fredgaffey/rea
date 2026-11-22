@@ -30,6 +30,7 @@ const OWNERS = [
   "firmware",
   "flutter",
   "ghidra",
+  "hbc2js",
   "hopper",
   "ida",
   "jeb",
