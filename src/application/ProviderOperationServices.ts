@@ -12,6 +12,11 @@ import {
   type FlutterRequest,
 } from "../domain/flutter/flutterBuildAnalysis.js";
 import {
+  hbc2jsRequestSchema,
+  type Hbc2jsOperation,
+  type Hbc2jsRequest,
+} from "../domain/hbc2js/hermesBytecode.js";
+import {
   jebRequestSchema,
   type JebOperation,
   type JebRequest,
@@ -41,6 +46,12 @@ export type FlutterBuildAnalysisService = ProviderOperationService<
   RequestAnalysisPort<FlutterRequest>
 >;
 
+export type HermesBytecodeAnalysisService = ProviderOperationService<
+  Hbc2jsOperation,
+  Hbc2jsRequest,
+  RequestAnalysisPort<Hbc2jsRequest>
+>;
+
 export type JebAnalysisService = ProviderOperationService<
   JebOperation,
   JebRequest,
@@ -63,6 +74,11 @@ export const createApktoolResourceAnalysisService = (
   provider: RequestAnalysisPort<ApktoolRequest>,
 ): ApktoolResourceAnalysisService =>
   new ProviderOperationService(provider, apktoolRequestSchema, "observed");
+
+export const createHermesBytecodeAnalysisService = (
+  provider: RequestAnalysisPort<Hbc2jsRequest>,
+): HermesBytecodeAnalysisService =>
+  new ProviderOperationService(provider, hbc2jsRequestSchema, "observed");
 
 export const createFlutterBuildAnalysisService = (
   provider: RequestAnalysisPort<FlutterRequest>,

@@ -58,6 +58,7 @@ const probeSessionAvailability = async (
   readonly android: ProviderAvailability | undefined;
   readonly adb: ProviderAvailability | undefined;
   readonly apktool: ProviderAvailability | undefined;
+  readonly hbc2js: ProviderAvailability | undefined;
   readonly jeb: JebAnalysisAvailability | undefined;
   readonly evmLimiter: ProviderAvailability | undefined;
 }> => {
@@ -67,12 +68,14 @@ const probeSessionAvailability = async (
     probe("android", () => probes.androidAnalysisAvailability(signal)),
     probe("adb", () => probes.adbAnalysisAvailability?.(signal)),
     probe("apktool", () => probes.apktoolAnalysisAvailability?.(signal)),
+    probe("hbc2js", () => probes.hbc2jsAnalysisAvailability?.(signal)),
     probe("jeb", () => probes.jebAnalysisAvailability?.(signal)),
     probe("artifact", () => probes.evmLimiterAvailability?.(signal)),
   ] as const;
   try {
-    const [android, adb, apktool, jeb, evmLimiter] = await Promise.all(pending);
-    return { android, adb, apktool, jeb, evmLimiter };
+    const [android, adb, apktool, hbc2js, jeb, evmLimiter] =
+      await Promise.all(pending);
+    return { android, adb, apktool, hbc2js, jeb, evmLimiter };
   } catch (cause: unknown) {
     const settled = await Promise.allSettled(pending);
     let failure = cause;
@@ -149,6 +152,9 @@ export const readSessionStatus = async (
       ...(availabilityResults.apktool === undefined
         ? {}
         : { apktoolAnalysisAvailability: availabilityResults.apktool }),
+      ...(availabilityResults.hbc2js === undefined
+        ? {}
+        : { hbc2jsAnalysisAvailability: availabilityResults.hbc2js }),
       ...(availabilityResults.jeb === undefined
         ? {}
         : { jebAnalysisAvailability: availabilityResults.jeb }),

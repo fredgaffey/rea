@@ -263,6 +263,15 @@ export const CLI_COMMAND_REGISTRATIONS = {
         context.environment,
       ),
   ),
+  hbc2js: plain(
+    () => import("./hbc2jsCommands.js"),
+    (module, context) =>
+      module.registerHbc2jsCommands(
+        context.cli,
+        context.logger,
+        context.environment,
+      ),
+  ),
   jeb: plain(
     () => import("./jebCommands.js"),
     (module, context) =>
@@ -496,6 +505,7 @@ const CLI_FAMILY_REGISTRATIONS: {
   flutter: ["flutter"],
   frida: ["frida"],
   apktool: ["apktool"],
+  hbc2js: ["hbc2js"],
   jeb: ["jeb"],
   adb: ["adb"],
   browser: [

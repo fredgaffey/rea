@@ -62,3 +62,15 @@ it("reports a missing launcher with the environment repair", async () => {
     remediation: expect.stringContaining("REA_HBC2JS_COMMAND"),
   });
 });
+
+it("reports a launcher that exits nonzero as version_unresolved with its exit code and stderr", async () => {
+  const failure = await probe("fail-exit").catch((cause: unknown) => cause);
+  expect(failure).toBeInstanceOf(Hbc2jsConfigurationFailure);
+  expect(failure).toMatchObject({
+    code: "version_unresolved",
+    diagnostics: {
+      exit_code: 1,
+      stderr_excerpt: expect.stringContaining("boom"),
+    },
+  });
+});

@@ -105,6 +105,11 @@ export const TOOL_FAMILY_DEFINITIONS = [
     contracts: TOOL_CONTRACT_GROUPS.APKTOOL_TOOL_CONTRACTS,
   },
   {
+    id: "hbc2js",
+    surface: "hbc2js-provider",
+    contracts: TOOL_CONTRACT_GROUPS.HBC2JS_TOOL_CONTRACTS,
+  },
+  {
     id: "jeb",
     surface: "jeb-provider",
     contracts: TOOL_CONTRACT_GROUPS.JEB_TOOL_CONTRACTS,

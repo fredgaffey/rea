@@ -9,6 +9,7 @@ import { ADB_PROVIDER_IDENTITY } from "../adb/AdbProviderIdentity.js";
 import { JADX_PROVIDER_IDENTITY } from "../android/JadxRelease.js";
 import { APK_SIGNATURE_PROVIDER_IDENTITY } from "../apkSignature/ApkSignatureRelease.js";
 import { APKTOOL_PROVIDER_IDENTITY } from "../apktool/ApktoolProviderIdentity.js";
+import { HBC2JS_PROVIDER_IDENTITY } from "../hbc2js/Hbc2jsProviderIdentity.js";
 import {
   HAR_CAPTURE_PROVIDER_IDENTITY,
   MITMPROXY_CAPTURE_PROVIDER_IDENTITY,
@@ -167,6 +168,13 @@ export const CAPABILITY_DECLARATIONS = {
     providers: [
       providerBinding(APKTOOL_PROVIDER_IDENTITY, {
         group: "APKTOOL_TOOL_CONTRACTS",
+      }),
+    ],
+  },
+  hbc2js: {
+    providers: [
+      providerBinding(HBC2JS_PROVIDER_IDENTITY, {
+        group: "HBC2JS_TOOL_CONTRACTS",
       }),
     ],
   },

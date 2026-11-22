@@ -103,6 +103,7 @@ export type AvailabilityPolicy = {
   readonly androidAnalysisAvailability?: ProviderAvailability;
   readonly adbAnalysisAvailability?: ProviderAvailability;
   readonly apktoolAnalysisAvailability?: ProviderAvailability;
+  readonly hbc2jsAnalysisAvailability?: ProviderAvailability;
   readonly jebAnalysisAvailability?: JebAnalysisAvailability;
   readonly javascriptRecoveryEnabled?: boolean;
   readonly webModuleResolutionEnabled?: boolean;
@@ -624,6 +625,11 @@ const workflowAvailabilityFor = (
     return ownerProbeAvailability(
       policy.apktoolAnalysisAvailability,
       "Set REA_APKTOOL_COMMAND to a caller-supplied Apktool executable or make Apktool 2.7.0 or newer available on PATH.",
+    );
+  if (kind === "hbc2js-provider")
+    return ownerProbeAvailability(
+      policy.hbc2jsAnalysisAvailability,
+      "Set REA_HBC2JS_COMMAND to a caller-supplied hbc2js launcher or make an hbc2js release with machine contract 1 available on PATH.",
     );
   if (kind === "jeb-provider") {
     const availability = policy.jebAnalysisAvailability;

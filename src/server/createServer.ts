@@ -52,6 +52,7 @@ import {
   createApktoolResourceAnalysisService,
   createFlutterBuildAnalysisService,
 } from "../application/ProviderOperationServices.js";
+import { createHermesBytecodeAnalysisService } from "../application/ProviderOperationServices.js";
 import { AdbDeviceAnalysisService } from "../application/adb/AdbDeviceAnalysisService.js";
 import { registerGuidedPrompts } from "./registerPrompts.js";
 import { registerSessionTools } from "./registerSessionTools.js";
@@ -229,6 +230,7 @@ export const createServer = (
     signalRecording,
     webRuntime,
     apktool,
+    hbc2js,
     jeb,
     adbDevice,
     cutter,
@@ -522,6 +524,12 @@ export const createServer = (
       registerServiceTools(
         server,
         { apktoolAnalysis: createApktoolResourceAnalysisService(apktool) },
+        contractTools,
+      ),
+    hbc2js: () =>
+      registerServiceTools(
+        server,
+        { hbc2jsAnalysis: createHermesBytecodeAnalysisService(hbc2js) },
         contractTools,
       ),
     jeb: () =>

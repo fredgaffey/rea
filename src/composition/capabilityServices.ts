@@ -1,4 +1,5 @@
 import type { RequestAnalysisPort } from "../ports/AnalysisProvider.js";
+import type { Hbc2jsRequest } from "../domain/hbc2js/hermesBytecode.js";
 import type { ApktoolRequest } from "../domain/apktool/apktoolResourceAnalysis.js";
 import type { FlutterRequest } from "../domain/flutter/flutterBuildAnalysis.js";
 import type { PcapRequest } from "../domain/pcap/pcapAnalysis.js";
@@ -68,6 +69,7 @@ import { createAndroidAnalysisProvider } from "./android.js";
 import { createPcapAnalysisProvider } from "./pcap.js";
 import { createFlutterBuildAnalysisProvider } from "./flutter.js";
 import { createApktoolResourceAnalysisProvider } from "./apktool.js";
+import { createHermesBytecodeAnalysisProvider } from "./hbc2js.js";
 import { createJebAnalysisProvider } from "./jeb.js";
 import { createAdbDeviceAnalysisProvider } from "./adb.js";
 import { createFridaInstrumentationProvider } from "./frida.js";
@@ -165,6 +167,7 @@ export interface CapabilityServiceOptions {
   readonly apktoolAnalysis?: RequestAnalysisPort<ApktoolRequest>;
   readonly pcapAnalysis?: RequestAnalysisPort<PcapRequest>;
   readonly flutterAnalysis?: RequestAnalysisPort<FlutterRequest>;
+  readonly hbc2jsAnalysis?: RequestAnalysisPort<Hbc2jsRequest>;
   readonly jebAnalysis?: JebAnalysisPort;
   readonly adbDeviceAnalysis?: RequestAnalysisPort<AdbRequest>;
   readonly browserObservation?: BrowserObservationPort;
@@ -635,6 +638,17 @@ const modules = {
     (_context, value) => ({
       probes: {
         apktoolAnalysisAvailability: (signal: AbortSignal) =>
+          value.inspectAvailability(signal),
+      },
+    }),
+  ),
+  hbc2js: service(
+    ({ environment, options, platform }) =>
+      options.hbc2jsAnalysis ??
+      createHermesBytecodeAnalysisProvider(environment, platform),
+    (_context, value) => ({
+      probes: {
+        hbc2jsAnalysisAvailability: (signal: AbortSignal) =>
           value.inspectAvailability(signal),
       },
     }),

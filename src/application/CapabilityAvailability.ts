@@ -48,6 +48,9 @@ export interface CapabilityAvailabilityProbes {
   readonly apktoolAnalysisAvailability?: (
     signal: AbortSignal,
   ) => Promise<ProviderAvailability>;
+  readonly hbc2jsAnalysisAvailability?: (
+    signal: AbortSignal,
+  ) => Promise<ProviderAvailability>;
   readonly jebAnalysisAvailability?: (
     signal: AbortSignal,
   ) => Promise<JebAnalysisAvailability>;

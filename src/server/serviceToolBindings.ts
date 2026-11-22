@@ -25,6 +25,7 @@ import {
 import type { AnalysisViewRetention } from "../application/analysisView/AnalysisViewRetention.js";
 import { z } from "zod";
 import { analysisViewSourceSchema } from "../domain/analysisView/analysisViewRequest.js";
+import type { HermesBytecodeAnalysisService } from "../application/ProviderOperationServices.js";
 import type { PacketCaptureService } from "../application/captures/PacketCaptureService.js";
 import type { FirmwareAnalysisService } from "../application/firmware/FirmwareAnalysisService.js";
 import { recordEvidenceSources } from "../application/investigation/recordEvidenceSources.js";
@@ -337,6 +338,10 @@ const SERVICE_TOOL_BINDINGS = {
       "inspect_apktool_client",
       "decode_android_resources",
     ])) satisfies Bind<ApktoolResourceAnalysisService>,
+  hbc2jsAnalysis: ((service) =>
+    contractServiceBindings(service, [
+      "inspect_hbc2js_client",
+    ])) satisfies Bind<HermesBytecodeAnalysisService>,
   jebAnalysis: ((service) =>
     contractServiceBindings(service, [
       "inspect_jeb_client",

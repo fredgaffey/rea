@@ -46,6 +46,7 @@ import * as pcapModule from "./cli/pcapCommands.js";
 import * as flutterModule from "./cli/flutterCommands.js";
 import * as fridaModule from "./cli/fridaCommands.js";
 import * as apktoolModule from "./cli/apktoolCommands.js";
+import * as hbc2jsModule from "./cli/hbc2jsCommands.js";
 import * as jebModule from "./cli/jebCommands.js";
 import * as adbModule from "./cli/adbCommands.js";
 import * as browserModule from "./cli/browserCommands.js";
@@ -108,6 +109,7 @@ const CLI_COMMAND_MODULES: CliCommandModules = {
   flutter: flutterModule,
   frida: fridaModule,
   apktool: apktoolModule,
+  hbc2js: hbc2jsModule,
   jeb: jebModule,
   adb: adbModule,
   browser: browserModule,

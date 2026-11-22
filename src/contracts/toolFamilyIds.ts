@@ -18,6 +18,7 @@ export const TOOL_FAMILY_IDS = [
   "flutter",
   "frida",
   "apktool",
+  "hbc2js",
   "jeb",
   "adb",
   "browser",
