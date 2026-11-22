@@ -17,7 +17,7 @@ import {
 import { providerConfigurationRefusal } from "../domain/providerConfigurationRefusal.js";
 import { err, ok, type Result } from "../domain/result.js";
 import type { Hbc2jsRequest } from "../domain/hbc2js/hermesBytecode.js";
-import { Hbc2jsCommandCleanup } from "./Hbc2jsCommandCleanup.js";
+import { ArtifactResourceScope } from "../resources/index.js";
 import {
   Hbc2jsConfigurationFailure,
   hbc2jsConfigurationAvailability,
@@ -52,7 +52,7 @@ export class Hbc2jsProvider {
     | Readonly<Record<string, string | undefined>>
     | undefined;
 
-  readonly #commands = new Hbc2jsCommandCleanup();
+  readonly #artifacts = new ArtifactResourceScope();
   readonly #shutdown = new AbortController();
   readonly #active = new Set<Promise<void>>();
   #closing = false;
@@ -84,8 +84,8 @@ export class Hbc2jsProvider {
         ? this.#shutdown.signal
         : AbortSignal.any([signal, this.#shutdown.signal]);
     return this.#track(
-      this.#commands
-        .run(() => this.#inspectAvailability(operationSignal), INSPECT_CLIENT)
+      this.#artifacts
+        .run(() => this.#inspectAvailability(operationSignal))
         .catch((cause: unknown) => {
           throw analysisClientFailureForOperation(
             cause,
@@ -106,7 +106,7 @@ export class Hbc2jsProvider {
         this.platform,
         signal,
       );
-      await inspectHbc2jsClient(selection, this.#commands, {
+      await inspectHbc2jsClient(selection, this.#artifacts, {
         signal,
         environment,
         platform: this.platform,
@@ -143,8 +143,8 @@ export class Hbc2jsProvider {
         ? this.#shutdown.signal
         : AbortSignal.any([options.signal, this.#shutdown.signal]);
     return this.#track(
-      this.#commands
-        .run(() => this.#execute(request, signal), request.operation)
+      this.#artifacts
+        .run(() => this.#execute(request, signal))
         .catch((cause: unknown) =>
           err(
             analysisClientFailureForOperation(
@@ -169,7 +169,7 @@ export class Hbc2jsProvider {
         this.platform,
         signal,
       );
-      const identity = await inspectHbc2jsClient(selection, this.#commands, {
+      const identity = await inspectHbc2jsClient(selection, this.#artifacts, {
         signal,
         environment,
         platform: this.platform,
@@ -245,7 +245,7 @@ export class Hbc2jsProvider {
   async #drainAndClean(): Promise<void> {
     await Promise.all(this.#active);
     try {
-      await this.#commands.close();
+      await this.#artifacts.close();
     } catch (cause) {
       throw analysisClientFailureForOperation(
         cause,

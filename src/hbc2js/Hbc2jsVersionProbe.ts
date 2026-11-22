@@ -7,7 +7,13 @@ import {
 } from "../providers/classifyProviderFailure.js";
 import { HBC2JS_PROVIDER_IDENTITY } from "./Hbc2jsProviderIdentity.js";
 import { ok, err, type Result } from "../domain/result.js";
-import { Hbc2jsCommandCleanup } from "./Hbc2jsCommandCleanup.js";
+import {
+  AnalysisCleanupLease,
+  ArtifactResourceScope,
+} from "../resources/index.js";
+import type { RetainedResourceScope } from "../ports/AnalysisProvider.js";
+import { retainOwnedCommandCleanup } from "../providers/OwnedCommandCleanup.js";
+import { analysisErrorWithCleanupDependencies } from "../domain/analysisErrorCleanup.js";
 import { AnalysisError } from "../domain/analysisErrorBase.js";
 import { ProviderAdapterError } from "../domain/providerAdapterError.js";
 import { launcherFailureOf } from "../process/launchFailure.js";
@@ -41,6 +47,19 @@ import {
   type Hbc2jsInvocation,
 } from "./Hbc2jsConfiguration.js";
 
+/** Lend the provider's resource scope to the shared command-cleanup retention. */
+const retainedScope = (
+  scope: ArtifactResourceScope,
+): RetainedResourceScope => ({
+  retain: (owner, resource) =>
+    scope.retain({
+      kind: "lease",
+      resource,
+      lease: AnalysisCleanupLease.forCloseOwner(owner, resource),
+    }),
+  run: (operation) => scope.run(operation),
+});
+
 /** What the version probe admitted about the selected launcher. */
 export interface Hbc2jsClientIdentity {
   readonly version: string;
@@ -54,7 +73,7 @@ export interface Hbc2jsClientIdentity {
 /** Probe within the caller-admitted command scope; decodes nothing. */
 export const inspectHbc2jsClient = async (
   selection: Hbc2jsCommandSelection,
-  cleanup: Hbc2jsCommandCleanup,
+  resourceOwner: ArtifactResourceScope,
   options: {
     readonly signal?: AbortSignal;
     readonly environment?: Readonly<Record<string, string | undefined>>;
@@ -151,12 +170,22 @@ export const inspectHbc2jsClient = async (
             userMessage: failure.message,
             diagnostics: failure.diagnostics,
           });
-    const retained = cleanup.retainFailure({
+    const cleanups = retainOwnedCommandCleanup(
       cause,
+      retainedScope(resourceOwner),
+      HBC2JS_PROVIDER_IDENTITY.id,
+      "inspect_hbc2js_client",
+    );
+    if (cleanups.length === 0) throw failure;
+    throw cleanups.reduce(
+      (composed, cleanup) =>
+        analysisErrorWithCleanupDependencies(
+          composed,
+          cleanup,
+          "inspect_hbc2js_client",
+        ),
       primary,
-      operation: "inspect_hbc2js_client",
-    });
-    throw retained === primary ? failure : retained;
+    );
   }
   if (interpreted === undefined)
     throw new Hbc2jsConfigurationFailure(

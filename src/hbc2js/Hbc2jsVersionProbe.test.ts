@@ -1,14 +1,14 @@
 import { afterEach, expect, it } from "vitest";
 import { writeHbc2jsLauncher } from "../../tests/fixtures/hbc2jsLauncher.js";
 import { HBC2JS_VERIFIED_VERSION } from "./Hbc2jsRelease.js";
-import { Hbc2jsCommandCleanup } from "./Hbc2jsCommandCleanup.js";
+import { ArtifactResourceScope } from "../resources/index.js";
 import { Hbc2jsConfigurationFailure } from "./Hbc2jsConfiguration.js";
 import { inspectHbc2jsClient } from "./Hbc2jsVersionProbe.js";
 
-let commands = new Hbc2jsCommandCleanup();
+let commands = new ArtifactResourceScope();
 afterEach(async () => {
   await commands.close();
-  commands = new Hbc2jsCommandCleanup();
+  commands = new ArtifactResourceScope();
 });
 
 const probe = async (mode: string) =>

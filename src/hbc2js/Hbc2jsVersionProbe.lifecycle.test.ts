@@ -2,13 +2,13 @@ import { afterEach, expect, it } from "vitest";
 
 import { writeHbc2jsLauncher } from "../../tests/fixtures/hbc2jsLauncher.js";
 import { AnalysisCancelledError } from "../domain/analysisErrorCore.js";
-import { Hbc2jsCommandCleanup } from "./Hbc2jsCommandCleanup.js";
+import { ArtifactResourceScope } from "../resources/index.js";
 import { inspectHbc2jsClient } from "./Hbc2jsVersionProbe.js";
 
-let commands = new Hbc2jsCommandCleanup();
+let commands = new ArtifactResourceScope();
 afterEach(async () => {
   await commands.close();
-  commands = new Hbc2jsCommandCleanup();
+  commands = new ArtifactResourceScope();
 });
 
 it.skipIf(process.platform === "win32")(
