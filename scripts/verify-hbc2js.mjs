@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
-import { mkdtemp, readFile, rm } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { readFile } from "node:fs/promises";
 import { delimiter, isAbsolute, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { Client } from "@modelcontextprotocol/client";
 import { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
+import { VerifierFixture } from "./lib/verifier-fixture.mjs";
 
 const execute = promisify(execFile);
 const usage =
@@ -26,11 +26,9 @@ if (process.argv.includes("--help")) {
   process.stdout.write(usage);
   process.exit(0);
 }
+class SkipLane extends Error {}
 const skip = (reason) => {
-  process.stdout.write(
-    `SKIP verify:hbc2js: ${reason}\nNo coverage is claimed.\n`,
-  );
-  process.exit(0);
+  throw new SkipLane(reason);
 };
 
 const entrypoint = fileURLToPath(new URL("./rea.mjs", import.meta.url));
@@ -77,8 +75,8 @@ const check = (name, condition, detail = "") => {
   if (!condition) failures += 1;
 };
 
-let client;
-let directory;
+let fixture;
+let skipped = null;
 try {
   let admitted;
   try {
@@ -98,7 +96,7 @@ try {
     `${admitted.command} ${admitted.hbc2js_version} (${admitted.admission})`,
   );
 
-  directory = await mkdtemp(join(tmpdir(), "rea-verify-hbc2js-"));
+  fixture = await VerifierFixture.open({ prefix: "rea-verify-hbc2js-" });
   let sample = argument("--hbc");
   if (sample === null) {
     const hermesc =
@@ -114,7 +112,7 @@ try {
     const source = fileURLToPath(
       new URL("../tests/fixtures/hbc2js/verify-sample.js", import.meta.url),
     );
-    sample = join(directory, "verify-sample.hbc");
+    sample = join(fixture.path, "verify-sample.hbc");
     try {
       await execute(hermesc, ["-emit-binary", "-out", sample, source], {
         timeout: 60_000,
@@ -174,7 +172,8 @@ try {
     capped.truncated === true && capped.recovery !== null,
   );
 
-  client = new Client({ name: "hbc2js-verifier", version: "1" });
+  const client = new Client({ name: "hbc2js-verifier", version: "1" });
+  fixture.releaseAfter(() => client.close());
   await client.connect(
     new StdioClientTransport({
       command: process.execPath,
@@ -241,14 +240,28 @@ try {
     refused.isError === true,
   );
 } catch (cause) {
-  failures += 1;
-  process.stdout.write(
-    `[FAIL] verifier execution - ${cause instanceof Error ? cause.message : String(cause)}\n`,
-  );
+  if (cause instanceof SkipLane) skipped = cause.message;
+  else {
+    failures += 1;
+    process.stdout.write(
+      `[FAIL] verifier execution - ${cause instanceof Error ? cause.message : String(cause)}\n`,
+    );
+  }
 } finally {
-  await client?.close().catch(() => {});
-  if (directory !== undefined)
-    await rm(directory, { recursive: true, force: true });
+  try {
+    await fixture?.release();
+  } catch (cause) {
+    failures += 1;
+    process.stdout.write(
+      `[FAIL] fixture cleanup - ${cause instanceof Error ? cause.message : String(cause)}\n`,
+    );
+  }
+}
+if (skipped !== null && failures === 0) {
+  process.stdout.write(
+    `SKIP verify:hbc2js: ${skipped}\nNo coverage is claimed.\n`,
+  );
+  process.exit(0);
 }
 if (failures > 0) {
   process.stdout.write(`\n${failures} check(s) failed\n`);
