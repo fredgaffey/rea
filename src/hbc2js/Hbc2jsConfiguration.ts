@@ -203,3 +203,7 @@ export const hbc2jsConfigurationAvailability = (
   remediation: cause.remediation,
   diagnostics: { ...cause.diagnostics },
 });
+
+/** Fixed allowances for one decoding command; they have no runtime override. */
+export const DECODE_TIMEOUT_MS = 120_000;
+export const DECODE_MAX_OUTPUT_BYTES = 8 * 1024 * 1024;

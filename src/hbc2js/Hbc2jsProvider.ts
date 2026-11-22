@@ -24,6 +24,7 @@ import {
   resolveHbc2jsCommand,
 } from "./Hbc2jsConfiguration.js";
 import { HBC2JS_PROVIDER_IDENTITY } from "./Hbc2jsProviderIdentity.js";
+import { inspectHermesBytecode } from "./Hbc2jsBytecodeInspection.js";
 import { inspectHbc2jsClient } from "./Hbc2jsVersionProbe.js";
 
 const INSPECT_CLIENT = "inspect_hbc2js_client";
@@ -175,6 +176,27 @@ export class Hbc2jsProvider {
         platform: this.platform,
       });
       if (signal.aborted) return err(cancelledBy(request.operation, signal));
+      if (request.operation === "inspect_hermes_bytecode") {
+        const inspected = await inspectHermesBytecode(
+          request,
+          selection,
+          this.#artifacts,
+          { signal, environment, platform: this.platform },
+        );
+        if (signal.aborted) return err(cancelledBy(request.operation, signal));
+        return ok(
+          createAnalysisExecution(
+            inspected.result,
+            {
+              ...HBC2JS_PROVIDER_IDENTITY,
+              version: `hbc2js@${identity.version}`,
+            },
+            {
+              limitations: [...identity.limitations, ...inspected.limitations],
+            },
+          ),
+        );
+      }
       return ok(
         createAnalysisExecution(
           {

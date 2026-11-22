@@ -1,6 +1,8 @@
 // Fake hbc2js launcher. Replies are abridged copies of real `hbc2js-machine/1`
 // output captured from hbc2js 0.1.0 on a small Hermes bytecode v96 file.
 // argv: <mode> <hbc2js arguments...>
+import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
 const VERSION = {
   schema: "hbc2js-machine/1",
   kind: "version",
@@ -56,6 +58,55 @@ const ERROR = {
 const [mode, ...args] = process.argv.slice(2);
 const emit = (value) => process.stdout.write(`${JSON.stringify(value)}\n`);
 
+// The digest of the file argv names, as the real tool reports it.
+const inputOf = () => {
+  const file = args.find(
+    (arg, index) =>
+      index > 0 &&
+      !arg.startsWith("-") &&
+      !/^\d+$/u.test(arg) &&
+      args[index - 1] !== "--offset" &&
+      args[index - 1] !== "--limit",
+  );
+  try {
+    const bytes = readFileSync(file);
+    return {
+      sha256: createHash("sha256").update(bytes).digest("hex"),
+      bytes: bytes.length,
+    };
+  } catch {
+    return INFO.input;
+  }
+};
+const ROWS = [
+  { id: 0, factoryFn: 74, deps: [1, 3], fnCount: 2 },
+  { id: 1, factoryFn: 76, deps: [2], fnCount: 5 },
+  { id: 2, factoryFn: 80, deps: [], fnCount: 1 },
+];
+const WARNING = {
+  code: "W_LAYOUT_ASSUMED",
+  message: "opcode table assumed, not proven; pass --layout to override",
+};
+const modulesReply = () => {
+  const offset = Number(args[args.indexOf("--offset") + 1] ?? 0);
+  const limit = Number(args[args.indexOf("--limit") + 1] ?? 200);
+  const rows = mode === "no-metro" ? [] : ROWS.slice(offset, offset + limit);
+  const next = offset + rows.length;
+  return {
+    schema: "hbc2js-machine/1",
+    kind: "modules",
+    ok: true,
+    hbc2js: "0.1.0",
+    input: inputOf(),
+    warnings: mode === "warn" ? [WARNING] : [],
+    metro: mode !== "no-metro",
+    total: mode === "no-metro" ? 0 : ROWS.length,
+    offset,
+    rows,
+    next: mode !== "no-metro" && next < ROWS.length ? next : null,
+  };
+};
+
 if (mode === "hang") {
   setInterval(() => {}, 1_000);
 } else if (mode === "ignore-sigterm") {
@@ -77,8 +128,19 @@ if (mode === "hang") {
   process.exitCode = 1;
 } else if (args.includes("--version")) {
   emit(VERSION);
+} else if (mode === "info-error") {
+  emit(ERROR);
+  process.exitCode = 2;
 } else if (args.includes("--info")) {
-  emit(INFO);
+  const input = inputOf();
+  emit({
+    ...INFO,
+    input:
+      mode === "digest-mismatch" ? { ...input, sha256: "0".repeat(64) } : input,
+    warnings: mode === "warn" ? [WARNING] : [],
+  });
+} else if (args[0] === "modules") {
+  emit(modulesReply());
 } else {
   process.stderr.write(`unexpected invocation: ${args.join(" ")}\n`);
   process.exitCode = 2;

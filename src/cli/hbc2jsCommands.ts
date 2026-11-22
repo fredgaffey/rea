@@ -11,6 +11,8 @@ import {
   analyzeWithService,
   type EvidenceInspectionService,
 } from "./contractCommandRunners.js";
+import { finishCliEvidenceCommand } from "./cliEvidenceCallerPath.js";
+import { projectCliAnalysisResult } from "./projectCliAnalysisResult.js";
 import type { CliInstance } from "./types.js";
 
 /** Expose the same explicit hbc2js requests through one-shot CLI commands. */
@@ -39,5 +41,26 @@ export const registerHbc2jsCommands = (
         "Inspect the caller-selected hbc2js launcher without reading any target",
     },
     analyzeWithService(run("inspect_hbc2js_client"), "hbc2js"),
+  );
+  registerContractCommand(
+    cli,
+    logger,
+    contractNamed(HBC2JS_TOOL_CONTRACTS, "inspect_hermes_bytecode"),
+    {
+      description:
+        "Inspect a Hermes bytecode file through hbc2js: digest, version, probe decision, sections and Metro modules",
+      positionals: ["path"],
+    },
+    (input, { operation, signal }) => {
+      const owned = run("inspect_hermes_bytecode")();
+      return finishCliEvidenceCommand(
+        input.path,
+        () => owned.inspect(input, { signal }),
+        owned,
+        "hbc2js",
+        operation,
+        signal,
+      ).then(projectCliAnalysisResult);
+    },
   );
 };

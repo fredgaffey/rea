@@ -48,7 +48,7 @@ import {
 } from "./Hbc2jsConfiguration.js";
 
 /** Lend the provider's resource scope to the shared command-cleanup retention. */
-const retainedScope = (
+export const retainedScope = (
   scope: ArtifactResourceScope,
 ): RetainedResourceScope => ({
   retain: (owner, resource) =>

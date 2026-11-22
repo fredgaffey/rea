@@ -341,6 +341,7 @@ const SERVICE_TOOL_BINDINGS = {
   hbc2jsAnalysis: ((service) =>
     contractServiceBindings(service, [
       "inspect_hbc2js_client",
+      "inspect_hermes_bytecode",
     ])) satisfies Bind<HermesBytecodeAnalysisService>,
   jebAnalysis: ((service) =>
     contractServiceBindings(service, [

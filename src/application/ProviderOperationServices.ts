@@ -78,7 +78,11 @@ export const createApktoolResourceAnalysisService = (
 export const createHermesBytecodeAnalysisService = (
   provider: RequestAnalysisPort<Hbc2jsRequest>,
 ): HermesBytecodeAnalysisService =>
-  new ProviderOperationService(provider, hbc2jsRequestSchema, "observed");
+  new ProviderOperationService(provider, hbc2jsRequestSchema, (operation) =>
+    // inspect_hermes_bytecode mixes observations and derivations; its result
+    // keeps them apart, and the record as a whole is derived.
+    operation === "inspect_hermes_bytecode" ? "derived" : "observed",
+  );
 
 export const createFlutterBuildAnalysisService = (
   provider: RequestAnalysisPort<FlutterRequest>,
