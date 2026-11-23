@@ -23,7 +23,8 @@ export REA_HBC2JS_COMMAND=/absolute/path/hbc2js
 ```
 
 Readiness is `rea inspect-hbc2js-client`: it runs `hbc2js --version --json`. REA
-requires `contract` 1 in the reply. `verified` admission is the release REA's parsing
+requires `contract` 1 in the reply. Use hbc2js 0.1.0 (published on npm; verified with
+hbc2js 0.1.0 on macOS). `verified` admission is the release REA's parsing
 was checked against; `compatible` is another release of the same contract and
 carries a limitation. A missing launcher reports `capability_unavailable` with the
 `REA_HBC2JS_COMMAND` remediation. A launcher on another contract is refused.
