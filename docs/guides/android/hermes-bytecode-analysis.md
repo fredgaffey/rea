@@ -23,9 +23,7 @@ export REA_HBC2JS_COMMAND=/absolute/path/hbc2js
 ```
 
 Readiness is `rea inspect-hbc2js-client`: it runs `hbc2js --version --json`. REA
-requires `contract` 1 in the reply. Use hbc2js 0.1.0 (published on npm; verified with
-hbc2js 0.1.0 on macOS). `verified` admission is the release REA's parsing
-was checked against; `compatible` is another release of the same contract and
+requires `contract` 1 in the reply. Use hbc2js 0.1.2 (published on npm; REA's parsing fixtures were captured from it and the `verify:hbc2js` lane passes against it on macOS). `verified` admission is that release; `compatible` is another release of the same contract and
 carries a limitation. A missing launcher reports `capability_unavailable` with the
 `REA_HBC2JS_COMMAND` remediation. A launcher on another contract is refused.
 
@@ -78,6 +76,8 @@ The source is a derivation, not a recovery:
 | `decompile_timeout_ms` (`hbc2js.decompile_timeout_ms`) | 300000 ms            | Wall clock for one decompile process      |
 | `max_heap_mb` (`hbc2js.max_heap_mb`)                   | unset (Node default) | V8 old-space of the hbc2js process        |
 | `max_source_bytes`                                     | 262144 bytes         | Source returned; a longer function is cut |
+| `output_limit_bytes`                                   | 8388608 bytes        | Output captured per hbc2js decoding run   |
+| `version_output_limit_bytes`                           | 65536 bytes          | Output captured from `--version --json`   |
 
 - Each control is a per-call parameter and a runtime analysis setting; the parameter
   wins, then the setting, then the default. `update_analysis_settings` changes a
@@ -91,8 +91,10 @@ The source is a derivation, not a recovery:
   `hbc2js.max_heap_mb` as the recovery.
 - `truncated: true` carries `source_bytes` (the full size) and a `recovery`. Raise
   `max_source_bytes`, or decompile a smaller function. The source is never paged.
-- `inspect_hermes_bytecode` keeps fixed allowances: 120 s per hbc2js command and an
-  8 MiB output capture.
+- `output_limit_bytes` (at most 67108864) and `version_output_limit_bytes` (at most 1048576) are per-call parameters on every hbc2js tool; they have no runtime setting.
+  When a capture is exhausted the refusal names the parameter, its default and its
+  maximum. Raise it on the next call; no restart is needed.
+- `inspect_hermes_bytecode` keeps a fixed 120 s deadline per hbc2js command.
 
 ## Real verification
 
