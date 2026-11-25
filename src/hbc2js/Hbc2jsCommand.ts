@@ -2,7 +2,11 @@ import { randomUUID } from "node:crypto";
 
 import { AnalysisError } from "../domain/analysisErrorBase.js";
 import { analysisErrorWithCleanupDependencies } from "../domain/analysisErrorCleanup.js";
-import { fixedAllowanceOptions } from "../domain/fixedAllowanceRemediation.js";
+import {
+  HBC2JS_OUTPUT_LIMITS,
+  hbc2jsOutputLimitRecovery,
+  hbc2jsOutputParameterLimit,
+} from "../domain/hbc2js/hermesBytecode.js";
 import { ProviderAdapterError } from "../domain/providerAdapterError.js";
 import type { Result } from "../domain/result.js";
 import { capturedProviderOutput } from "../process/capturedProviderOutput.js";
@@ -15,7 +19,6 @@ import { retainOwnedCommandCleanup } from "../providers/OwnedCommandCleanup.js";
 import { classifyProviderFailure } from "../providers/classifyProviderFailure.js";
 import type { ArtifactResourceScope } from "../resources/index.js";
 import {
-  DECODE_MAX_OUTPUT_BYTES,
   DECODE_TIMEOUT_MS,
   hbc2jsInvocation,
   type Hbc2jsCommandSelection,
@@ -41,9 +44,13 @@ export const runHbc2jsMachine = async (
     readonly signal?: AbortSignal;
     readonly environment: Readonly<Record<string, string | undefined>>;
     readonly platform: NodeJS.Platform;
+    /** The caller's output_limit_bytes; the default applies without it. */
+    readonly outputLimitBytes?: number;
   },
 ): Promise<Hbc2jsMachineReply> => {
   const { signal, platform } = options;
+  const outputLimitBytes =
+    options.outputLimitBytes ?? HBC2JS_OUTPUT_LIMITS.output_limit_bytes.default;
   const hostEnvironment = snapshotEnvironment(options.environment, platform);
   const invocation = hbc2jsInvocation(
     selection,
@@ -69,7 +76,7 @@ export const runHbc2jsMachine = async (
       },
       {
         timeoutMs: DECODE_TIMEOUT_MS,
-        diagnosticBytes: DECODE_MAX_OUTPUT_BYTES,
+        diagnosticBytes: outputLimitBytes,
         // hbc2js reports its own failures as a JSON envelope with exit 2.
         acceptNonZeroExit: true,
         observeCompleted: (snapshot) => {
@@ -91,11 +98,17 @@ export const runHbc2jsMachine = async (
           remediationAction: `This ${String(DECODE_TIMEOUT_MS)} ms hbc2js allowance has no runtime override. Allow cleanup headroom in the outer MCP client deadline, confirm outstanding work and cleanup, then retry with a smaller module page.`,
         },
         outputLimit: {
-          limits: { max_output_bytes: DECODE_MAX_OUTPUT_BYTES },
-          recovery: fixedAllowanceOptions(
-            "The hbc2js output capture allowance",
-            "capture",
-            { limit: DECODE_MAX_OUTPUT_BYTES, unit: "bytes" },
+          limits: { max_output_bytes: outputLimitBytes },
+          recovery: {
+            retryable: false,
+            remediationAction: hbc2jsOutputLimitRecovery(
+              "output_limit_bytes",
+              outputLimitBytes,
+            ),
+          },
+          limit: hbc2jsOutputParameterLimit(
+            "output_limit_bytes",
+            outputLimitBytes,
           ),
         },
         dialect: (_exit, _details, unclassified) =>

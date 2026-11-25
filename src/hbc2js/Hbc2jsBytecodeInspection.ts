@@ -149,7 +149,16 @@ export const inspectHermesBytecode = async (
     readonly platform: NodeJS.Platform;
   },
 ): Promise<Hbc2jsBytecodeInspection> => {
-  const { path: callerPath, module_offset, module_limit } = request.input;
+  const {
+    path: callerPath,
+    module_offset,
+    module_limit,
+    output_limit_bytes,
+  } = request.input;
+  const machineOptions =
+    output_limit_bytes === undefined
+      ? options
+      : { ...options, outputLimitBytes: output_limit_bytes };
   const path = resolve(callerPath);
   const measured = await measureTarget(path, scope, options.signal);
 
@@ -165,12 +174,24 @@ export const inspectHermesBytecode = async (
   ];
   const info = parseReply(
     infoReply,
-    await runHbc2jsMachine(selection, infoArgv, OPERATION, scope, options),
+    await runHbc2jsMachine(
+      selection,
+      infoArgv,
+      OPERATION,
+      scope,
+      machineOptions,
+    ),
     "info",
   );
   const modules = parseReply(
     modulesReply,
-    await runHbc2jsMachine(selection, modulesArgv, OPERATION, scope, options),
+    await runHbc2jsMachine(
+      selection,
+      modulesArgv,
+      OPERATION,
+      scope,
+      machineOptions,
+    ),
     "modules",
   );
   for (const [kind, reported] of [

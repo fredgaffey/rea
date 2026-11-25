@@ -11,7 +11,7 @@ import { createTestBinarySession } from "../../fixtures/binarySession.js";
 import { createMcpSchemaValidation } from "../../fixtures/mcpSchemaValidation.js";
 import { assertAdvertisedMcpContracts } from "./mcpContractHarness.js";
 
-const identity = { id: "hbc2js", name: "hbc2js", version: "hbc2js@0.1.0" };
+const identity = { id: "hbc2js", name: "hbc2js", version: "hbc2js@0.1.2" };
 
 const bytecode = {
   target: {

@@ -1,6 +1,10 @@
 import { capturedProviderOutput } from "../process/capturedProviderOutput.js";
 import { providerOutcomeOf } from "../process/ProviderOutcome.js";
-import { fixedAllowanceOptions } from "../domain/fixedAllowanceRemediation.js";
+import {
+  HBC2JS_OUTPUT_LIMITS,
+  hbc2jsOutputLimitRecovery,
+  hbc2jsOutputParameterLimit,
+} from "../domain/hbc2js/hermesBytecode.js";
 import {
   classifyProviderFailure,
   type ProviderFailureDialect,
@@ -41,7 +45,6 @@ import {
   HBC2JS_MISSING_REMEDIATION,
   HBC2JS_NOT_EXECUTABLE_REMEDIATION,
   HBC2JS_VERSION_REMEDIATION,
-  VERSION_MAX_OUTPUT_BYTES,
   VERSION_TIMEOUT_MS,
   type Hbc2jsCommandSelection,
   type Hbc2jsInvocation,
@@ -78,9 +81,14 @@ export const inspectHbc2jsClient = async (
     readonly signal?: AbortSignal;
     readonly environment?: Readonly<Record<string, string | undefined>>;
     readonly platform: NodeJS.Platform;
+    /** The caller's version_output_limit_bytes; the default applies without it. */
+    readonly versionOutputLimitBytes?: number;
   },
 ): Promise<Hbc2jsClientIdentity> => {
   const { signal, environment = process.env, platform } = options;
+  const outputLimitBytes =
+    options.versionOutputLimitBytes ??
+    HBC2JS_OUTPUT_LIMITS.version_output_limit_bytes.default;
   const hostEnvironment = snapshotEnvironment(environment, platform);
   let invocation: Hbc2jsInvocation;
   try {
@@ -123,7 +131,7 @@ export const inspectHbc2jsClient = async (
       },
       {
         timeoutMs: VERSION_TIMEOUT_MS,
-        diagnosticBytes: VERSION_MAX_OUTPUT_BYTES,
+        diagnosticBytes: outputLimitBytes,
         observeCompleted: (snapshot) => {
           try {
             interpreted = ok(
@@ -149,7 +157,10 @@ export const inspectHbc2jsClient = async (
     const failure =
       recordedFailure === undefined
         ? (launcherConfigurationFailure(cause, selection) ??
-          classifyProviderFailure(cause, hbc2jsProbeDialect(selection)))
+          classifyProviderFailure(
+            cause,
+            hbc2jsProbeDialect(selection, outputLimitBytes),
+          ))
         : new Hbc2jsConfigurationFailure(
             recordedFailure.code,
             recordedFailure.message,
@@ -309,6 +320,7 @@ const launcherConfigurationFailure = (
 /** How the shared classifier reports the version probe's remaining failures. */
 const hbc2jsProbeDialect = (
   selection: Hbc2jsCommandSelection,
+  outputLimitBytes: number,
 ): ProviderFailureDialect => {
   const diagnostics = {
     selected_command: selection.command,
@@ -325,11 +337,17 @@ const hbc2jsProbeDialect = (
         ...hbc2jsVersionProbeTimeoutGuidance(),
       },
       outputLimit: {
-        limits: { max_output_bytes: VERSION_MAX_OUTPUT_BYTES },
-        recovery: fixedAllowanceOptions(
-          "The hbc2js version-output capture allowance (decompile_timeout_ms does not raise it)",
-          "capture",
-          { limit: VERSION_MAX_OUTPUT_BYTES, unit: "bytes" },
+        limits: { max_output_bytes: outputLimitBytes },
+        recovery: {
+          retryable: false,
+          remediationAction: hbc2jsOutputLimitRecovery(
+            "version_output_limit_bytes",
+            outputLimitBytes,
+          ),
+        },
+        limit: hbc2jsOutputParameterLimit(
+          "version_output_limit_bytes",
+          outputLimitBytes,
         ),
       },
       dialect: (_exit, _details, unclassified) => unclassified({ diagnostics }),

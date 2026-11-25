@@ -20,7 +20,6 @@ import {
 export const HBC2JS_COMMAND_ENV = "REA_HBC2JS_COMMAND";
 
 export const VERSION_TIMEOUT_MS = 20_000;
-export const VERSION_MAX_OUTPUT_BYTES = 64 * 1024;
 
 export const hbc2jsVersionProbeTimeoutGuidance = (): {
   readonly userMessage: string;
@@ -204,6 +203,5 @@ export const hbc2jsConfigurationAvailability = (
   diagnostics: { ...cause.diagnostics },
 });
 
-/** Fixed allowances for one decoding command; they have no runtime override. */
+/** Fixed deadline for one decoding command; it has no runtime override. */
 export const DECODE_TIMEOUT_MS = 120_000;
-export const DECODE_MAX_OUTPUT_BYTES = 8 * 1024 * 1024;

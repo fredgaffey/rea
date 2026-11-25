@@ -170,10 +170,14 @@ export class Hbc2jsProvider {
         this.platform,
         signal,
       );
+      const versionOutputLimit = request.input.version_output_limit_bytes;
       const identity = await inspectHbc2jsClient(selection, this.#artifacts, {
         signal,
         environment,
         platform: this.platform,
+        ...(versionOutputLimit === undefined
+          ? {}
+          : { versionOutputLimitBytes: versionOutputLimit }),
       });
       if (signal.aborted) return err(cancelledBy(request.operation, signal));
       if (request.operation === "inspect_hermes_bytecode") {

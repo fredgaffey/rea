@@ -1,7 +1,7 @@
 /** The machine contract REA admits. hbc2js keeps it additive within a number. */
 export const HBC2JS_CONTRACT = 1;
 /** The hbc2js release this adapter's replies were captured from. */
-export const HBC2JS_VERIFIED_VERSION = "0.1.0";
+export const HBC2JS_VERIFIED_VERSION = "0.1.2";
 
 /** Admission of one hbc2js `--version --json` reply. */
 export type Hbc2jsVersionAdmission =

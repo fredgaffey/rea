@@ -3,6 +3,10 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, onTestFinished } from "vitest";
+import {
+  HBC2JS_OUTPUT_LIMITS,
+  hbc2jsInputSchemas,
+} from "../domain/hbc2js/hermesBytecode.js";
 import { writeHbc2jsLauncher } from "../../tests/fixtures/hbc2jsLauncher.js";
 import { HBC2JS_COMMAND_ENV } from "./Hbc2jsConfiguration.js";
 import { Hbc2jsProvider } from "./Hbc2jsProvider.js";
@@ -40,7 +44,7 @@ it("returns the resolved client for inspect_hbc2js_client", async () => {
     client: {
       command: launcher,
       command_source: "environment",
-      hbc2js_version: "0.1.0",
+      hbc2js_version: "0.1.2",
       contract: 1,
       hbc_versions: [84, 94, 96, 98, 99],
       node: "24.22.1",
@@ -49,7 +53,7 @@ it("returns the resolved client for inspect_hbc2js_client", async () => {
   });
   expect(result.value.provider).toMatchObject({
     id: "hbc2js",
-    version: "hbc2js@0.1.0",
+    version: "hbc2js@0.1.2",
   });
 });
 
@@ -157,7 +161,7 @@ describe("inspect_hermes_bytecode", () => {
     expect(result.value.limitations).toEqual(
       expect.arrayContaining([expect.stringContaining("numeric Metro ids")]),
     );
-    expect(result.value.provider).toMatchObject({ version: "hbc2js@0.1.0" });
+    expect(result.value.provider).toMatchObject({ version: "hbc2js@0.1.2" });
   });
 
   it("pages the module table", async () => {
@@ -221,5 +225,88 @@ describe("inspect_hermes_bytecode", () => {
       },
     });
     expect(result.ok).toBe(false);
+  });
+});
+
+describe("output capture limits", () => {
+  const ownDirectory = async () => {
+    const directory = await mkdtemp(join(tmpdir(), "rea-hbc-limit-"));
+    onTestFinished(() => rm(directory, { recursive: true, force: true }));
+    const path = join(directory, "index.android.hbc");
+    await writeFile(path, "bytes");
+    return path;
+  };
+
+  it("accepts, defaults and bounds the parameters", () => {
+    const client = hbc2jsInputSchemas.inspect_hbc2js_client;
+    const inspect = hbc2jsInputSchemas.inspect_hermes_bytecode;
+    expect(client.parse({})).toEqual({});
+    expect(client.parse({ version_output_limit_bytes: 1024 })).toMatchObject({
+      version_output_limit_bytes: 1024,
+    });
+    expect(
+      inspect.parse({ path: "/x.hbc" }).output_limit_bytes,
+    ).toBeUndefined();
+    expect(
+      inspect.parse({ path: "/x.hbc", output_limit_bytes: 1 }),
+    ).toMatchObject({ output_limit_bytes: 1 });
+    for (const bad of [0, -1, 1.5]) {
+      expect(
+        client.safeParse({ version_output_limit_bytes: bad }).success,
+      ).toBe(false);
+      expect(
+        inspect.safeParse({ path: "/x.hbc", output_limit_bytes: bad }).success,
+      ).toBe(false);
+    }
+    expect(
+      client.safeParse({
+        version_output_limit_bytes:
+          HBC2JS_OUTPUT_LIMITS.version_output_limit_bytes.maximum + 1,
+      }).success,
+    ).toBe(false);
+    expect(
+      inspect.safeParse({
+        path: "/x.hbc",
+        output_limit_bytes: HBC2JS_OUTPUT_LIMITS.output_limit_bytes.maximum + 1,
+      }).success,
+    ).toBe(false);
+  });
+
+  it("applies version_output_limit_bytes to the version probe and reports the control", async () => {
+    const { provider } = await providerFor("ok");
+    const result = await provider.execute({
+      operation: "inspect_hbc2js_client",
+      input: { version_output_limit_bytes: 8 },
+    });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(JSON.stringify(result.error)).toMatch(/version_output_limit_bytes/u);
+    const unbounded = await provider.execute({
+      operation: "inspect_hbc2js_client",
+      input: {},
+    });
+    expect(unbounded.ok).toBe(true);
+  });
+
+  it("applies output_limit_bytes to decoding output and reports the control", async () => {
+    const { provider } = await providerFor("ok");
+    const path = await ownDirectory();
+    const small = await provider.execute({
+      operation: "inspect_hermes_bytecode",
+      input: {
+        path,
+        module_offset: 0,
+        module_limit: 200,
+        output_limit_bytes: 8,
+      },
+    });
+    expect(small.ok).toBe(false);
+    if (small.ok) return;
+    expect(JSON.stringify(small.error)).toMatch(/output_limit_bytes/u);
+    const normal = await provider.execute({
+      operation: "inspect_hermes_bytecode",
+      input: { path, module_offset: 0, module_limit: 200 },
+    });
+    expect(normal.ok).toBe(true);
   });
 });

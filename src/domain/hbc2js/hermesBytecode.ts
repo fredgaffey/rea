@@ -1,6 +1,55 @@
 import { z } from "zod";
 
+import type { AnalysisParameterLimit } from "../analysisSettings.js";
 import { localPathStringSchema } from "../localPath.js";
+
+/** Per-call bounds on the bytes captured from one hbc2js process. */
+export const HBC2JS_OUTPUT_LIMITS = {
+  output_limit_bytes: {
+    default: 8 * 1024 * 1024,
+    maximum: 64 * 1024 * 1024,
+  },
+  version_output_limit_bytes: {
+    default: 64 * 1024,
+    maximum: 1024 * 1024,
+  },
+} as const;
+/** An hbc2js output-capture parameter. */
+export type Hbc2jsOutputLimitField = keyof typeof HBC2JS_OUTPUT_LIMITS;
+
+/** One accepted hbc2js output-capture parameter, as a request control. */
+export const hbc2jsOutputParameterLimit = (
+  field: Hbc2jsOutputLimitField,
+  effectiveValue: number,
+): AnalysisParameterLimit => ({
+  control_kind: "parameter",
+  parameter: field,
+  effective_value: effectiveValue,
+  unit: "bytes",
+  minimum: 1,
+  maximum: HBC2JS_OUTPUT_LIMITS[field].maximum,
+  default_value: HBC2JS_OUTPUT_LIMITS[field].default,
+  applies_at: "next_call",
+});
+
+/** Recovery for an exhausted hbc2js output-capture budget. */
+export const hbc2jsOutputLimitRecovery = (
+  field: Hbc2jsOutputLimitField,
+  effectiveValue: number,
+): string =>
+  effectiveValue < HBC2JS_OUTPUT_LIMITS[field].maximum
+    ? `Pass a larger ${field} (up to ${String(HBC2JS_OUTPUT_LIMITS[field].maximum)} bytes) on the next call; no restart is required.`
+    : `${field} is at its maximum of ${String(effectiveValue)} bytes; use a smaller module page or a smaller bytecode file. Repeating the unchanged request fails the same way.`;
+
+const outputLimitSchema = (field: Hbc2jsOutputLimitField, what: string) =>
+  z
+    .int()
+    .positive()
+    .max(HBC2JS_OUTPUT_LIMITS[field].maximum)
+    .optional()
+    .describe(
+      `Bytes of ${what} captured per hbc2js process (default ${String(HBC2JS_OUTPUT_LIMITS[field].default)}, at most ${String(HBC2JS_OUTPUT_LIMITS[field].maximum)}); applies on the next call without restart`,
+    );
 
 /**
  * Caller intent for hbc2js-backed Hermes bytecode analysis. hbc2js is
@@ -8,7 +57,12 @@ import { localPathStringSchema } from "../localPath.js";
  * of the caller's file by a separate process.
  */
 export const hbc2jsInputSchemas = {
-  inspect_hbc2js_client: z.strictObject({}),
+  inspect_hbc2js_client: z.strictObject({
+    version_output_limit_bytes: outputLimitSchema(
+      "version_output_limit_bytes",
+      "--version --json output",
+    ),
+  }),
   inspect_hermes_bytecode: z.strictObject({
     path: localPathStringSchema.describe(
       "Local Hermes bytecode (.hbc) file to inspect",
@@ -24,6 +78,14 @@ export const hbc2jsInputSchemas = {
       .max(1000)
       .default(200)
       .describe("Most Metro module rows to return; page with next_offset"),
+    output_limit_bytes: outputLimitSchema(
+      "output_limit_bytes",
+      "decoding output",
+    ),
+    version_output_limit_bytes: outputLimitSchema(
+      "version_output_limit_bytes",
+      "--version --json output",
+    ),
   }),
 };
 

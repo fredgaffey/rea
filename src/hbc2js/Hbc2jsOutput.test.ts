@@ -5,7 +5,7 @@ const version = {
   schema: "hbc2js-machine/1",
   kind: "version",
   ok: true,
-  hbc2js: "0.1.0",
+  hbc2js: "0.1.2",
   contract: 1,
   hbcVersions: [84, 94, 96, 98, 99],
   node: "24.22.1",
@@ -26,7 +26,7 @@ describe("parseHbc2jsMachineReply", () => {
 
   it.each([
     ["", "empty_output"],
-    ["hbc2js 0.1.0\n", "not_json"],
+    ["hbc2js 0.1.2\n", "not_json"],
     ["[1]", "schema_mismatch"],
     [JSON.stringify({ ...version, hbcVersions: "96" }), "schema_mismatch"],
     [JSON.stringify({ ...version, schema: "hbc2js-machine/2" }), "schema_tag"],

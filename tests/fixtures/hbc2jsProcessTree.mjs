@@ -1,5 +1,5 @@
 // Fake hbc2js launcher. Replies are abridged copies of real `hbc2js-machine/1`
-// output captured from hbc2js 0.1.0 on a small Hermes bytecode v96 file.
+// output captured from hbc2js 0.1.2 on a small Hermes bytecode v96 file.
 // argv: <mode> <hbc2js arguments...>
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
@@ -7,7 +7,7 @@ const VERSION = {
   schema: "hbc2js-machine/1",
   kind: "version",
   ok: true,
-  hbc2js: "0.1.0",
+  hbc2js: "0.1.2",
   contract: 1,
   hbcVersions: [84, 94, 96, 98, 99],
   node: "24.22.1",
@@ -16,7 +16,7 @@ const INFO = {
   schema: "hbc2js-machine/1",
   kind: "info",
   ok: true,
-  hbc2js: "0.1.0",
+  hbc2js: "0.1.2",
   input: {
     sha256: "8dea0f0c9466dd2891bb67b367c9dca1d9c1acaf58293220663b9114c7aa533a",
     bytes: 859,
@@ -96,7 +96,7 @@ const modulesReply = () => {
     schema: "hbc2js-machine/1",
     kind: "modules",
     ok: true,
-    hbc2js: "0.1.0",
+    hbc2js: "0.1.2",
     input: inputOf(),
     warnings: mode === "warn" ? [WARNING] : [],
     metro: mode !== "no-metro",
@@ -113,7 +113,7 @@ if (mode === "hang") {
   process.on("SIGTERM", () => {});
   setInterval(() => {}, 1_000);
 } else if (mode === "not-json") {
-  process.stdout.write("hbc2js 0.1.0\n");
+  process.stdout.write("hbc2js 0.1.2\n");
 } else if (mode === "contract-2") {
   emit({ ...VERSION, schema: "hbc2js-machine/2", contract: 2 });
 } else if (mode === "contract-2-same-schema") {
